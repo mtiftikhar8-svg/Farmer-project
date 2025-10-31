@@ -11,23 +11,7 @@ import asyncio
 import random
 import os
 import pygame
-from langchain.chains import RetrievalQA
-from langchain_community.llms import Ollama
-from langchain_community.embeddings import OllamaEmbeddings
-import json
-import pandas as pd
-from datetime import datetime
 from crewai import LLM
-
-
-import pandas as pd
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain_community.vectorstores import FAISS
-from langchain.chains.question_answering import load_qa_chain
-from langchain.prompts import PromptTemplate
-from dotenv import load_dotenv
-import os
 
 
 # Load environment variables
@@ -272,268 +256,102 @@ elif app == "🎤 AI Crop Assistant":
                 # st.write(answer_passed)
                 asyncio.run(amain(ai_response))
 
+
+
+
 # # ============== Page 3 ==============
 elif app == "💧 Irrigation Advisory":
 
-        st.title("💧 Irrigation Decision Support")
-        load_dotenv()
+    st.title("💧 Irrigation Decision Support")
+    load_dotenv()
 
-        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
-        
-        def get_farm_details(farm_id, resources_file, env_file, weather_file):
-            # --------------------
-            # Load files
-            # --------------------
-            with open(resources_file) as f:
-                farm_data = json.load(f)
-
-            with open(env_file) as f:
-                env_data = json.load(f)
-
-            weather_df = pd.read_csv(weather_file)
-
-            # normalize farm_data into a list
-            farm_list = farm_data if isinstance(farm_data, list) else [farm_data]
-
-            # find main farm
-            farm_res = next((f for f in farm_list if f["farm_id"] == farm_id), None)
-            if not farm_res:
-                return {"error": f"Farm {farm_id} not found"}
-
-            # collect all farms: main + neighbors
-            farm_ids = [farm_id] + farm_res.get("neighboring_farms", [])
-
-            results = []
-
-            # --------------------
-            # Prepare environment lookup (filter by current date’s day)
-            # --------------------
-            today_day = datetime.today().day
-            env_lookup = {}
-
-            if isinstance(env_data, list):
-                for entry in env_data:
-                    if "date" in entry:
-                        try:
-                            entry_day = datetime.strptime(entry["date"], "%Y-%m-%d").day
-                        except ValueError:
-                            continue  # skip bad date format
-                        if entry_day == today_day:  # 👈 only match day
-                            env_lookup[entry["farm_id"]] = entry
-            elif isinstance(env_data, dict) and "farm_id" in env_data:
-                if "date" in env_data:
-                    try:
-                        entry_day = datetime.strptime(env_data["date"], "%Y-%m-%d").day
-                        if entry_day == today_day:
-                            env_lookup[env_data["farm_id"]] = env_data
-                    except ValueError:
-                        pass
-
-            # --------------------
-            # Collect details
-            # --------------------
-            for f_id in farm_ids:
-                details = {"farm_id": f_id}
-
-                # resources
-                f_res = next((f for f in farm_list if f["farm_id"] == f_id), None)
-                if f_res:
-                    details["irrigation_hours_per_week"] = f_res["irrigation_hours_per_week"]
-                    details["fertilizer_kg_available"] = f_res["fertilizer_kg_available"]
-                    details["equipment_availability"] = f_res["equipment_availability"]
-
-                # environment
-                if f_id in env_lookup:
-                    env = env_lookup[f_id]
-                    details.update({
-                        "tehsil": env["tehsil"],
-                        "district": env["district"],
-                        "province": env["province"],
-                        "crop_type": env["crop_type"],
-                        "soil_moisture_%": env["soil_moisture_%"],
-                        "temperature_c": env["temperature_c"],
-                        "humidity_%": env["humidity_%"],
-                        "pest_detection": env["pest_detection"]
-                    })
-
-                    # Weather info (match by tehsil/district/province)
-                    match = weather_df[
-                        (weather_df["tehsil"] == env["tehsil"]) &
-                        (weather_df["district"] == env["district"]) &
-                        (weather_df["province"] == env["province"])
-                    ]
-                    if not match.empty:
-                        row = match.iloc[0]
-                        details.update({
-                            "rainfall_mm": int(row["rainfall_mm"]),
-                            "temperature_c_weather": float(row["temperature_c"]),
-                            "humidity_%weather": int(row["humidity_%"]),
-                            "extreme_event": str(row["extreme_event"])
-                        })
-
-                results.append(details)
-
-            return results
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
 
 
-        # --------------------
-        # Example usage
-        # --------------------
-        farm_id = "F-001" # 👈 user gives ID
-        resources_file = "datasets/farm_resources.json"
-        env_file = "datasets/farm_sensor_data_tehsil_with_date.json"
-        weather_file = "datasets/weather_data_tehsil.csv"
 
-        result = get_farm_details(farm_id, resources_file, env_file, weather_file)
-        print(json.dumps(result, indent=2))
+######################################################################################        
+# models
+######################################################################################        
+    def create_prompt_city(user_input):
 
-        # Keys you want to exclude temporarily
-        exclude_irri_keys = ["irrigation_hours_per_week", "equipment_availability", "fertilizer_kg_available","tehsil", "district", "province","pest_detection",]
-        include_harv_keys = ["equipment_availability"]
-        include_pest_keys = ["pest_detection"]
-        include_rag_keys = ["crop_type"]
+        prompt1 = f"""
+            Aap aik maloomat nikalne wale agent hain.
+            Diye gaye text mein se shehar ka naam nikalain.
+            Agar ek se zyada shehron ka zikr ho to sirf pehla shehar likhain.
+            Agar koi shehar ka naam na ho to sirf "None" likhain.
+            Text: {user_input}
 
-        # Make a copy without those keys
-        irri_agent = [
-        {k: v for k, v in farm.items() if k not in exclude_irri_keys}
-        for farm in result
-        ]
+            Example:
+            Text: Ali ne Lahore ki market se tamatar khareeday.
+            Output: Lahore
+        """
+        return prompt1
 
-        harv_agent = [
-        {k: v for k, v in farm.items() if k in include_harv_keys}
-        for farm in result
-        ]
+    user_input = listen_speech()
 
-        pest_agent = [
-        {k: v for k, v in farm.items() if k in include_pest_keys}
-        for farm in result
-        ]
+    prompt1 = create_prompt_city(user_input)
+    response_city = llm.generate_content(prompt1)
+    ai_response_city = response_city.text if response_city else "Sorry, I couldn't process that."    
 
 
-        rag_agent = [
-        {k: v for k, v in farm.items() if k in include_rag_keys}
-        for farm in result
-        ]
-        # Get current date
-        current_date = datetime.now().date()
 
-        st.write(rag_agent)
-        if st.button("Get Advisory"):
-               
+    def create_prompt_veg(user_input):
+
+        prompt2 = f"""
+            Aap aik maloomat nikalne wale agent hain.
+            Diye gaye text mein se sabziyon ke naam nikalain.
+            Agar ek se zyada sabziyan hon to un ke naam comma (,) se alag karke likhain.
+            Agar koi sabzi ka naam na ho to sirf "None" likhain.
+            Text: {user_input}
+
+            Example:
+            Text: Ali ne Lahore ki market se tamatar aur piyaz khareeday.
+            Output: tamatar, piyaz
+        """
+        return prompt2
+
+
+
+    prompt2 = create_prompt_veg(user_input)
+    response_veg = llm.generate_content(prompt2)
+    ai_response_veg = response_veg.text if response_veg else "Sorry, I couldn't process that." 
+
+
+######################################################################################        
+# models ended
+######################################################################################   
+
+   
+    soil_data = get_soil_data()
+    weather_data = get_weather_data(ai_response_city, openweather_api_key)
 
 
 
 
-
-                csv_file_path = "market_prices.csv"  # Replace with your CSV file path
-                df = pd.read_csv(csv_file_path)
-
-                # texts = df.apply(lambda row: " | ".join([str(x) for x in row.values]), axis=1).tolist()
-                texts = "In Karachi, rice and wheat are in high demand, with rice selling at approximately PKR 150 per kg and wheat at PKR 120 per kg. Cotton and sugarcane also have moderate demand in Karachi, priced around PKR 200 per kg and PKR 90 per kg respectively. In Lahore, wheat and vegetables see the highest consumption, with wheat at PKR 125 per kg and vegetables averaging PKR 60 per kg. Maize and rice also maintain steady sales in Lahore, around PKR 100 and PKR 155 per kg. Multan shows strong demand for sugarcane and cotton, selling at PKR 95 and PKR 210 per kg respectively, while rice and vegetables have moderate sales. Faisalabad primarily demands wheat and vegetables, priced at PKR 122 and PKR 65 per kg, with maize in moderate demand. Peshawar has high consumption of wheat and maize, approximately PKR 118 and PKR 105 per kg, while rice and vegetables sell moderately. Quetta shows steady demand for vegetables and wheat, priced at PKR 70 and PKR 120 per kg, and lower demand for rice, maize, cotton, and sugarcane."
-                text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=500,
-                    chunk_overlap=50
-                )
-                docs = text_splitter.split_text("\n".join(texts))
-
-                # embeddings = GoogleGenerativeAIEmbeddings(
-                #     model="models/text-embedding-004",
-                #     api_key='GEMINI_API_KEY'
-                # )
-
-                # vectorstore = FAISS.from_texts(docs, embedding=embeddings)
-                embeddings = OllamaEmbeddings(model="nomic-embed-text")
-
-                # Create FAISS Vectorstore
-                vectorstore = FAISS.from_texts(docs, embedding=embeddings)
-                                # Optional: Save FAISS DB locally
-                vectorstore.save_local("faiss_db")
-
-                # llm = ChatGoogleGenerativeAI(
-                # model="gemini-2.0-flash",
-                # api_key='GEMINI_API_KEY'
-                #     )
-                # ---- LLM (Llama 3.2 from Ollama) ----
-                llm = Ollama(
-                    model="llama3.2",   # You can also use "llama3.2:70b" if you have it pulled
-                    temperature=0
-                )
+    agents = Farmer_Agents()
+    irrigation_advisory_agent = agents.irrigation_advisory_agent()
 
 
-                prompt_template = """
-                            Aap ek assistant hain jo farmer data aur market trends ke base par sawalat ka jawab deta hai roman urdu mein. 
-                            Use retrieved documents for reference.
-
-                            Question: {question}
-                            Context: {context}
-
-                            Answer in short and clear Roman Urdu, specifically mentioning only the crop named in the question:
-                            - Us crop ka kaun sa city mein zyada demand hai
-                            - Us crop ka wahan selling price kya hai
-                            - Baaki kisi crop ki info mat dein
-                            """
-
-
-                prompt = PromptTemplate(template=prompt_template, input_variables=["question","context"])
-
-                # qa_chain = load_qa_chain(llm=llm, chain_type="stuff", prompt=prompt)
-
-                qa_chain = RetrievalQA.from_chain_type(
-                llm=llm,
-                retriever=vectorstore.as_retriever(search_kwargs={"k": 10}),
-                chain_type="stuff",
-                chain_type_kwargs={"prompt": prompt}
-                )
-
-                def ask_query(query):
-                    result = qa_chain.run(query)
-                    return result
-
-
-                user_query = f"Tell me about {rag_agent}"
-                answer = ask_query(user_query)
-                # st.write(answer)
-
-                agents = Farmer_Agents()
-                irrigation_priority_weather_agent = agents.irrigation_priority_weather_agent()
-                harvest_prediction_agent = agents.harvest_prediction_agent()
-                pest_advisor_agent = agents.pest_advisor_agent()
-                farmer_summary_advisor_agent = agents.farmer_summary_advisor_agent()
-
-                tasks = Farmer_Tasks()
-                Irrigation_Priority_Weather_Task = tasks.Irrigation_Priority_Weather_Task(
-                    agent=irrigation_priority_weather_agent, 
-                    farmers_data=irri_agent,
+    tasks = Farmer_Tasks()
+    Irrigation_Advisory_Task = tasks.Irrigation_Advisory_Task(
+                    agent=irrigation_advisory_agent,
+                    soil_data=soil_data,
+                    weather_data=weather_data,
+                    vegetable_name=ai_response_veg 
+                    
                     )
                 
-                Harvest_Prediction_Task_Seasonal = tasks.Harvest_Prediction_Task_Seasonal(
-                    agent=harvest_prediction_agent, 
-                    farmers_data=harv_agent,
-                    current_date=current_date,
+       
+
+
+    crew = Crew(
+                    agents=[irrigation_advisory_agent,],
+                    tasks=[Irrigation_Advisory_Task,], 
                 )
-
-                Pest_Advisor_Task = tasks.Pest_Advisor_Task(
-                    agent=pest_advisor_agent, 
-                    farmers_data=pest_agent,
-                )
-
-                Farmer_Summary_Advisor_Task = tasks.Farmer_Summary_Advisor_Task(
-                    agent=farmer_summary_advisor_agent,
-                    irrigation_output=Irrigation_Priority_Weather_Task,
-                    harvest_output=Harvest_Prediction_Task_Seasonal,
-                    pest_output=Pest_Advisor_Task,
-                    rag_output = answer
-                )
-
-
-                crew = Crew(
-                    agents=[irrigation_priority_weather_agent,harvest_prediction_agent,pest_advisor_agent,farmer_summary_advisor_agent],
-                    tasks=[Irrigation_Priority_Weather_Task,Harvest_Prediction_Task_Seasonal,Pest_Advisor_Task,Farmer_Summary_Advisor_Task], 
-                                )
                 
-                results = crew.kickoff()
-                ai_response = results.raw
-                st.write(ai_response)
-                st.success("✅ Advisory Generated!")
-                st.write(ai_response)
-                asyncio.run(amain(ai_response))
+    results = crew.kickoff()
+    ai_response = results.raw
+    st.write(ai_response)
+    st.success("✅ Advisory Generated!")
+    st.write(ai_response)
+    asyncio.run(amain(ai_response))

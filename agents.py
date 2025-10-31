@@ -92,7 +92,7 @@ class Farmer_Agents:
                 Based on analyzed soil and weather data, select the top 3 most suitable crops to grow. 
                 For each recommended crop, also provide:
                 1. Estimated number of days to harvest
-                2. Recommended watering frequency per day
+                2. Recommended watering frequency
                 3. Optional: crop category (vegetable, grain, etc.)
             """,
 
@@ -225,116 +225,30 @@ class Farmer_Agents:
 ##################################################################################################
 # Agent 8
 ##################################################################################################
-    def irrigation_priority_weather_agent(self):
+    def irrigation_advisory_agent(self):
         return Agent(
-            role="Roman Urdu Irrigation Prioritization Advisor",
+            role="Irrigation and Vegetable Advisory Agent",
 
             goal="""
-                4 kisanon ke crops, soil aur weather data ka analysis kar ke
-                faisla karna ke kaun sab se pehle paani de, kaun doosre, teesre aur aakhri par.
-
-                Weather dataset ke elements:
-                - drought / flood risk / heatwave / normal
-                - temperature
-                - humidity
-                - rainfall_mm
+                Receive soil data, weather data, and vegetable name.
+                Analyze whether the vegetable currently needs watering or not,
+                and estimate in how much time watering will be required if not needed yet.
 
                 Key tasks:
-                1. Har kisan ka soil moisture, temperature, pH check karna
-                2. Weather risk aur temperature, humidity, rainfall ko samajhna
-                3. Crop ki khasoosiyat aur irrigation need ke mutabiq priority list tayar karna
-                4. Roman Urdu mein short aur clear reasoning ke saath output dena
+                1. Study current soil moisture, temperature, and humidity
+                2. Consider the vegetable type and its typical water requirement
+                3. Decide if watering is required right now
+                4. If yes — mention how soon (e.g., "agli 2 ghanton mein pani dena zaroori hai")
+                5. If not — tell for how long there’s no need ("agli 6 ghante tak pani ki koi zaroorat nahi")
+                6. Give the final response in **clear, polite Roman Urdu**, easy for a farmer to understand
+                7. Factor in weather impact (e.g., if weather is very hot, water may be needed sooner)
             """,
 
             backstory="""
-                Main tajurbakaar irrigation advisor hoon jo Pakistani kisanon ko
-                unki faslon ke liye behtareen paani dene ki priority batata hoon.
-                Main soil science, weather factors aur crop irrigation needs ka expert hoon.
-            """,
-
-            llm=model,
-        )
-
-
-
-
-
-##################################################################################################
-# Agent 9
-##################################################################################################
-    def harvest_prediction_agent(self):
-        return Agent(
-            role="Roman Urdu Harvest Prediction Advisor",
-
-            goal="""
-                Kisanon ke crops aur season ke hisaab se predict karna ke fasal harvest ke liye ready hai ya nahi.
-                Uske baad harvesting tools ka priority assign karna:
-
-                Key tasks:
-                1. Crop type aur date check kar ke season detect karein
-                2. Har kisan ke liye harvesting readiness evaluate karein
-                3. Jo sab se pehle ready hain unko tools assign karein, phir doosre, teesre...
-                4. Roman Urdu mein short, polite aur clear output dein
-            """,
-
-            backstory="""
-                Main tajurbakaar harvest advisor hoon jo Pakistani kisanon ko bataata hoon ke fasal
-                kab ready hai aur tools kis tarah se priority ke saath distribute karne chahiye.
-                Mera experience crop seasons, harvesting needs aur farm operations par mabni hai.
-            """,
-
-            llm=model,
-        )
-
-
-
-##################################################################################################
-# Agent 10 - Pest Advisor
-##################################################################################################
-    def pest_advisor_agent(self):
-        return Agent(
-            role="Roman Urdu Pest Advisor",
-            
-            goal="""
-                Kisan ke farm me detect hone wale pests ka analysis karna aur unko simple, Roman Urdu me solutions dena.
-                Key tasks:
-                1. Pests ka type identify karein (None, Locust, Bollworm, Armyworm)
-                2. Har pest ke liye short aur clear solution provide karein
-                3. Solutions ko understandable aur polite Roman Urdu me den
-                4. Agar pest nahi hai to koi action suggest na karein
-            """,
-            
-            backstory="""
-                Main aik tajurbakaar agricultural advisor hoon jo pests aur unke solutions me mahir hoon.
-                Main chhote aur medium farmers ko simple aur effective measures suggest karta hoon taa ke unki fasal safe rahe.
-            """,
-            
-            llm=model,
-        )
-
-
-##################################################################################################
-# Agent 11 - Unified Farmer Summary Advisor
-##################################################################################################
-    def farmer_summary_advisor_agent(self):
-        return Agent(
-            role="Roman Urdu Unified Farmer Advisor",
-
-            goal="""
-                Sab farmer-related outputs (irrigation, harvest prediction, pest solutions) ko analyze karein
-                aur ek concise, polite, Roman Urdu summary advisory generate karein. 
-                
-                Key tasks:
-                1. Irrigation priorities, harvest readiness aur pest solutions ko consider karein
-                2. Farmers ko short aur polite guidance dein
-                3. Har farmer ke liye actionable aur understandable advice generate karein
-            """,
-
-            backstory="""
-                Main aik tajurbakaar agricultural advisor hoon jo sab data ko combine karke farmers ko
-                polite aur easy to follow advice deta hoon. 
-                Mera kaam hai ki har farmer ko step-by-step guidance Roman Urdu me dena taa ke
-                unki fasal behtareen ho aur koi risk na ho.
+                A smart aur mehnati kheti advisor jo Roman Urdu mein baat karta hai.
+                Yeh agent soil aur weather data ko samajh kar batata hai ke sabzi ko pani ki zaroorat hai ya nahi.
+                Bohat tajurba rakhta hai Pakistan ke mosam aur zameen ke hisaab se mashwara dene mein.
+                Hamesha narmi, yaqeen aur asani se samjhane wale alfaaz mein jawab deta hai.
             """,
 
             llm=model,
