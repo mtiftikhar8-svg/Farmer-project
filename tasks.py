@@ -1,20 +1,18 @@
 from crewai import  Task
-from crewai_tools import SerperDevTool
 from dotenv import load_dotenv
 import os 
-from crewai_tools import TavilySearchTool
+
 
 
 
 
 load_dotenv()
 
-os.environ["TAVILY_API_KEY"] = "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"
+
 os.getenv("GEMINI_API_KEY")
 
-research_tool = SerperDevTool()
-# Initialize the Tavily search tool
-tavily_tool = TavilySearchTool()
+
+
 
 class Farmer_Tasks:
 

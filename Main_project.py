@@ -14,7 +14,7 @@ import pygame
 from crewai import LLM
 
 
-# Load environment variables
+
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
@@ -23,9 +23,8 @@ openweather_api_key = os.getenv("OPENWEATHER_API_KEY")
 
 # Configure Gemini
 genai.configure(api_key=gemini_api_key)
-# model = genai.GenerativeModel('gemini/gemini-2.0-flash')
 llm = LLM(
-    model="gemini/gemini-1.5-flash",   # ✅ include "gemini/"
+    model="gemini/gemini-2.0-flash-exp",  
     api_key=gemini_api_key
 )
 
@@ -99,15 +98,7 @@ def save_text_to_file(text, filename="data.txt"):
 def load_text_from_file(filename="data.txt"):
     with open(filename, "r", encoding="utf-8") as f:
         return f.read()
-    
-
-
-
-
-
-
-
-
+ 
 # UI
 st.set_page_config(page_title="AI Farming Assistant", layout="centered")
 st.sidebar.title("🧭 Select Tool")
@@ -115,12 +106,9 @@ app = st.sidebar.selectbox("Choose an assistant", ["🌾 Smart Farming Advisor",
 
 
 
-bandwidth = ["High", "Medium", "Low"]
-selected_crop = st.selectbox("Select the Bandwidth:", bandwidth)
 
-# Save selection to local JSON file
-with open("selected_crop.txt", "w") as f:
-    f.write(selected_crop)
+
+
 
 # # ============== Page 1 ==============
 if app == "🌾 Smart Farming Advisor":
@@ -202,7 +190,6 @@ elif app == "🎤 AI Crop Assistant":
 
 
         st.title("🎤 AI Crop Assistant")
-        # suggestedCrops = ["wheat", "maize", "sunflower"]
         soil_data = get_soil_data()
 
         if st.button("Start Voice Advisory"):
@@ -218,7 +205,6 @@ elif app == "🎤 AI Crop Assistant":
                 
 
                 agents = Farmer_Agents()
-                # urdu_agri_advisor_agent = agents.urdu_agri_advisor_agent()
                 crop_comparison_agent = agents.crop_comparison_agent()
                 soil_weather_analysis_agent = agents.soil_weather_analysis_agent()
                 final_advisory_agent = agents.final_advisory_agent()
@@ -251,9 +237,7 @@ elif app == "🎤 AI Crop Assistant":
 
                 ai_response = results.raw
                 st.success("✅ Advisory Generated!")
-                # st.write(ai_response)
                 st.write("AI speaking")
-                # st.write(answer_passed)
                 asyncio.run(amain(ai_response))
 
 

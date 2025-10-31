@@ -5,23 +5,9 @@ import os
 load_dotenv()
 api_key=os.getenv("GEMINI_API_KEY")
 
-model = LLM(model="gemini/gemini-2.0-flash" ,api_key=api_key)
+model = LLM(model="gemini/gemini-2.0-flash-exp" ,api_key=api_key)
 
 file_path = "selected_crop.txt"
-
-
-
-with open(file_path, "r") as f:
-        selected_crop = f.read().strip()
-        if selected_crop == "Medium":
-            model = LLM(model="gemini/gemini-2.0-flash" ,api_key=api_key, max_tokens=1024)
-        elif selected_crop == "Low":
-            model = LLM(model="gemini/gemini-2.0-flash" ,api_key=api_key, max_tokens=512)
-
-
-
-
-
 
 
 class Farmer_Agents:
